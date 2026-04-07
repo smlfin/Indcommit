@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>IndividualTrack — Daily Entry</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+<style>
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.stats-grid-3{grid-template-columns:1fr 1fr 1fr;}
+.stat-card{background:var(--surface);border-radius:12px;padding:14px 12px;border:1px solid var(--border);}
+.stat-label{font-size:10px;font-weight:700;color:var(--t4);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px;}
+.stat-val{font-family:'DM Mono',monospace;font-size:17px;font-weight:600;color:var(--t1);line-height:1.2;}
+.stat-val.green{color:var(--green)}.stat-val.amber{color:var(--amber)}.stat-val.blue{color:var(--blue)}.stat-val.red{color:var(--red)}
+.section-divider{font-size:11px;font-weight:800;color:var(--t4);letter-spacing:1.2px;text-transform:uppercase;margin:16px 0 10px;display:flex;align-items:center;gap:8px;}
+.section-divider::after{content:"";flex:1;height:1px;background:var(--border);}
+.drr-wrap{display:flex;align-items:center;gap:14px;padding:14px;background:var(--surface);border-radius:12px;border:1px solid var(--border);margin-bottom:10px;}
+.drr-ring{width:64px;height:64px;flex-shrink:0;position:relative;}
+.drr-ring svg{transform:rotate(-90deg);}
+.drr-ring-lbl{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:12px;font-weight:700;}
+.wd-bar-track{background:var(--border);border-radius:20px;height:8px;overflow:hidden;}
+.wd-bar-fill{height:100%;border-radius:20px;background:var(--blue);transition:width .4s;}
+.popup-ov{display:none;position:fixed;inset:0;background:rgba(15,39,68,.55);z-index:400;align-items:center;justify-content:center;padding:20px;}
+.popup-ov.open{display:flex;}
+.popup-box{background:#fff;border-radius:20px;padding:24px;width:100%;max-width:360px;box-shadow:0 16px 48px rgba(15,39,68,.22);}
+.popup-icon{font-size:40px;text-align:center;margin-bottom:10px;}
+.popup-title{font-size:17px;font-weight:700;color:var(--navy);text-align:center;margin-bottom:8px;}
+.popup-body{font-size:13px;color:var(--t2);text-align:center;margin-bottom:20px;line-height:1.65;white-space:pre-line;}
+.popup-acts{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.popup-acts.single{grid-template-columns:1fr;}
+.btn-resign{background:var(--red-lt);color:var(--red);border:none;padding:5px 10px;border-radius:8px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;}
+.btn-resign:hover{background:#fecaca;}
+.nav-links{display:flex;justify-content:center;gap:16px;margin-top:14px;font-size:12px;}
+.nav-links a{color:var(--blue);text-decoration:none;font-weight:600;}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ══ LOGIN ══════════════════════════════════════════════════ -->
+<div id="screen-login" class="screen active">
+  <div class="login-card">
+    <div class="login-logo">
+      <h1>IndividualTrack</h1>
+      <p>Daily Commitment & Achievement</p>
+    </div>
+
+    <div id="login-step1" class="login-step active">
+      <div class="step-label">Step 1 of 2 — Branch</div>
+      <div class="field">
+        <label>Branch</label>
+        <select id="sel-branch"><option value="">Loading…</option></select>
+      </div>
+      <div class="field">
+        <label>Branch Password</label>
+        <input type="password" id="inp-branch-pwd" placeholder="Enter password" autocomplete="off">
+      </div>
+      <div id="login-err1" style="display:none" class="alert alert-error">
+        <span class="alert-icon">✕</span><span id="login-err1-msg"></span>
+      </div>
+      <button class="btn btn-primary" id="btn-branch-login"><span>Continue</span></button>
+      <div class="nav-links">
+        <a href="admin.html">🔐 Admin Panel</a>
+        <a href="reports.html">📊 Branch Reports</a>
+      </div>
+    </div>
+
+    <div id="login-step2" class="login-step">
+      <div class="step-label">Step 2 of 2 — Who are you?</div>
+      <div class="field">
+        <label>Your Name</label>
+        <select id="sel-employee"><option value="">Select your name</option></select>
+      </div>
+      <div id="login-err2" style="display:none" class="alert alert-error">
+        <span class="alert-icon">✕</span><span id="login-err2-msg"></span>
+      </div>
+      <button class="btn btn-primary" id="btn-emp-select"><span>Enter</span></button>
+      <button class="btn btn-secondary" id="btn-back-login" style="margin-top:8px">← Back</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MAIN ════════════════════════════════════════════════════ -->
+<div id="screen-main" class="screen">
+  <div class="topbar">
+    <div class="topbar-logo">IndividualTrack <span>v3</span></div>
+    <div class="topbar-right">
+      <span class="topbar-branch" id="topbar-branch-name"></span>
+      <button class="btn-logout" id="btn-logout">Logout</button>
+    </div>
+  </div>
+
+  <div class="greeting">
+    <div class="greeting-sub" id="greeting-time">Good morning</div>
+    <div class="greeting-name" id="greeting-name">–</div>
+    <div class="greeting-branch"><span>📍</span><span id="greeting-branch">–</span></div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="morning"><span class="tab-icon">☀️</span>MORNING</button>
+    <button class="tab-btn" data-tab="evening"><span class="tab-icon">🌙</span>EVENING</button>
+    <button class="tab-btn" data-tab="team"><span class="tab-icon">👥</span>TEAM</button>
+  </div>
+
+  <!-- MORNING TAB -->
+  <div id="tab-morning" class="tab-content active scroll-content">
+    <div id="morning-submitted-banner" style="display:none" class="submitted-banner">
+      <div class="check">✅</div><h3>Morning Entry Submitted</h3>
+      <p id="morning-submitted-time"></p>
+    </div>
+
+    <div id="morning-form-wrap">
+      <div class="date-chip">📅 <span id="morning-date-display"></span></div>
+
+      <!-- PERFORMANCE DASHBOARD (shown when targets exist) -->
+      <div id="perf-dashboard" style="display:none">
+        <div class="section-divider">📊 Your Performance Dashboard</div>
+
+        <div class="card" style="padding:14px;margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <span style="font-size:13px;font-weight:700;color:var(--t2)">📅 Working Days — <span id="wd-month-lbl">–</span></span>
+            <span class="badge badge-blue" id="wd-today-badge">–</span>
+          </div>
+          <div class="stats-grid stats-grid-3" style="margin-bottom:10px">
+            <div class="stat-card"><div class="stat-label">Total WD</div><div class="stat-val blue" id="wd-total">–</div><div style="font-size:10px;color:var(--t4)">this month</div></div>
+            <div class="stat-card"><div class="stat-label">Elapsed</div><div class="stat-val" id="wd-elapsed">–</div><div style="font-size:10px;color:var(--t4)">days done</div></div>
+            <div class="stat-card"><div class="stat-label">Remaining</div><div class="stat-val amber" id="wd-remaining">–</div><div style="font-size:10px;color:var(--t4)">days left</div></div>
+          </div>
+          <div class="wd-bar-track"><div class="wd-bar-fill" id="wd-bar" style="width:0%"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t4);margin-top:4px">
+            <span>Start</span><span id="wd-pct">0%</span><span>End</span>
+          </div>
+        </div>
+
+        <div class="section-divider">💼 Investment</div>
+        <div class="stats-grid" style="margin-bottom:6px">
+          <div class="stat-card"><div class="stat-label">Yearly Target</div><div class="stat-val blue" id="inv-yr-tgt">–</div></div>
+          <div class="stat-card"><div class="stat-label">Yearly Achieved</div><div class="stat-val green" id="inv-yr-ach">–</div></div>
+          <div class="stat-card"><div class="stat-label">Yearly Balance</div><div class="stat-val amber" id="inv-yr-bal">–</div></div>
+          <div class="stat-card"><div class="stat-label">Monthly Target</div><div class="stat-val blue" id="inv-mo-tgt">–</div></div>
+          <div class="stat-card"><div class="stat-label">Monthly Achieved</div><div class="stat-val green" id="inv-mo-ach">–</div></div>
+          <div class="stat-card"><div class="stat-label">Monthly Balance</div><div class="stat-val amber" id="inv-mo-bal">–</div></div>
+        </div>
+        <div class="drr-wrap">
+          <div class="drr-ring">
+            <svg width="64" height="64" viewBox="0 0 64 64">
+              <circle cx="32" cy="32" r="26" fill="none" stroke="#e2e8f0" stroke-width="6"/>
+              <circle cx="32" cy="32" r="26" fill="none" stroke="#1a56db" stroke-width="6"
+                stroke-dasharray="163" stroke-dashoffset="163" id="inv-drr-arc"/>
+            </svg>
+            <div class="drr-ring-lbl" id="inv-drr-pct">0%</div>
+          </div>
+          <div style="flex:1">
+            <div style="font-size:12px;font-weight:700;color:var(--t3);margin-bottom:2px">INVESTMENT DRR</div>
+            <div style="font-family:'DM Mono',monospace;font-size:24px;font-weight:700;color:var(--amber)" id="inv-drr-val">–</div>
+            <div style="font-size:11px;color:var(--t3)">Per day to hit monthly target</div>
+          </div>
+        </div>
+
+        <div class="section-divider">🏦 Recurring Deposit — Count</div>
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-label">Yearly Target</div><div class="stat-val blue" id="rd-yr-tgt">–</div></div>
+          <div class="stat-card"><div class="stat-label">Yearly Achieved</div><div class="stat-val green" id="rd-yr-ach">–</div></div>
+          <div class="stat-card"><div class="stat-label">Yearly Balance</div><div class="stat-val amber" id="rd-yr-bal">–</div></div>
+          <div class="stat-card"><div class="stat-label">Monthly Target</div><div class="stat-val blue" id="rd-mo-tgt">–</div></div>
+          <div class="stat-card"><div class="stat-label">Monthly Achieved</div><div class="stat-val green" id="rd-mo-ach">–</div></div>
+          <div class="stat-card"><div class="stat-label">Monthly Balance</div><div class="stat-val amber" id="rd-mo-bal">–</div></div>
+        </div>
+        <div class="section-divider">🏦 Recurring Deposit — Amount</div>
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-label">Yearly Target</div><div class="stat-val blue" id="rda-yr-tgt">–</div></div>
+          <div class="stat-card"><div class="stat-label">Yearly Achieved</div><div class="stat-val green" id="rda-yr-ach">–</div></div>
+          <div class="stat-card"><div class="stat-label">Yearly Balance</div><div class="stat-val amber" id="rda-yr-bal">–</div></div>
+          <div class="stat-card"><div class="stat-label">Monthly Target</div><div class="stat-val blue" id="rda-mo-tgt">–</div></div>
+          <div class="stat-card"><div class="stat-label">Monthly Achieved</div><div class="stat-val green" id="rda-mo-ach">–</div></div>
+          <div class="stat-card"><div class="stat-label">Monthly Balance</div><div class="stat-val amber" id="rda-mo-bal">–</div></div>
+        </div>
+        <div class="drr-wrap">
+          <div class="drr-ring">
+            <svg width="64" height="64" viewBox="0 0 64 64">
+              <circle cx="32" cy="32" r="26" fill="none" stroke="#e2e8f0" stroke-width="6"/>
+              <circle cx="32" cy="32" r="26" fill="none" stroke="#0e7c7b" stroke-width="6"
+                stroke-dasharray="163" stroke-dashoffset="163" id="rda-drr-arc"/>
+            </svg>
+            <div class="drr-ring-lbl" id="rda-drr-pct">0%</div>
+          </div>
+          <div style="flex:1">
+            <div style="font-size:12px;font-weight:700;color:var(--t3);margin-bottom:2px">RD AMOUNT DRR</div>
+            <div style="font-family:'DM Mono',monospace;font-size:24px;font-weight:700;color:var(--teal)" id="rda-drr-val">–</div>
+            <div style="font-size:11px;color:var(--t3)">Per day to hit monthly RD amount target</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-divider">📝 Today's Commitment</div>
+      <div class="card">
+        <div class="section-head inv">💼 Investment</div>
+        <div class="field"><label>Investment Commitment (₹)</label>
+          <input type="number" id="m-inv-com" placeholder="0" min="0" inputmode="numeric">
+        </div>
+        <div class="section-head rd">🏦 Recurring Deposit</div>
+        <div class="field"><label>RD Count Commitment</label>
+          <input type="number" id="m-rd-count" placeholder="0" min="0" inputmode="numeric">
+        </div>
+        <div class="field"><label>RD Amount Commitment (₹)</label>
+          <input type="number" id="m-rd-amount" placeholder="0" min="0" inputmode="numeric">
+        </div>
+      </div>
+
+      <div id="morning-alert" style="display:none" class="alert"></div>
+      <button class="btn btn-primary" id="btn-morning-submit"><span>Submit Morning Commitment</span></button>
+      <p style="text-align:center;font-size:12px;color:var(--t4);margin-top:10px">
+        Branch Head can only submit after all team members submit.
+      </p>
+    </div>
+  </div>
+
+  <!-- EVENING TAB -->
+  <div id="tab-evening" class="tab-content scroll-content">
+    <div id="evening-submitted-banner" style="display:none" class="submitted-banner">
+      <div class="check">✅</div><h3>Evening Entry Submitted</h3>
+      <p id="evening-submitted-time"></p>
+    </div>
+    <div id="evening-form-wrap">
+      <div class="date-chip">📅 <span id="evening-date-display"></span></div>
+      <div class="card" id="morning-ref-card">
+        <div class="card-title"><span class="dot" style="background:var(--blue)"></span>Today's Commitment (Reference)</div>
+        <div class="tiles" style="margin-bottom:0">
+          <div class="tile"><div class="tile-label">Investment</div><div class="tile-value blue" id="ref-inv">–</div></div>
+          <div class="tile"><div class="tile-label">RD Count</div><div class="tile-value blue" id="ref-rd-count">–</div></div>
+          <div class="tile"><div class="tile-label">RD Amount</div><div class="tile-value blue" id="ref-rd-amount">–</div></div>
+        </div>
+      </div>
+      <div id="no-morning-alert" style="display:none" class="alert alert-error">
+        <span class="alert-icon">⚠️</span><span>Submit morning commitment first.</span>
+      </div>
+      <div id="evening-form-inner">
+        <div class="card">
+          <div class="section-head inv">💼 Investment Achievement</div>
+          <div class="field"><label>Investment Achievement (₹)</label><input type="number" id="e-inv-ach" placeholder="0" min="0" inputmode="numeric"></div>
+          <div class="field"><label>Accounts Closed Today</label><input type="number" id="e-inv-closing" placeholder="0" min="0" inputmode="numeric"></div>
+          <div class="section-head rd">🏦 RD Achievement</div>
+          <div class="field"><label>RD Count Achievement</label><input type="number" id="e-rd-count" placeholder="0" min="0" inputmode="numeric"></div>
+          <div class="field"><label>RD Amount Achievement (₹)</label><input type="number" id="e-rd-amount" placeholder="0" min="0" inputmode="numeric"></div>
+          <div class="section-head mat">📤 RD Maturity (if any)</div>
+          <div class="toggle-row">
+            <label for="mat-toggle">Any RD maturities handled today?</label>
+            <label class="toggle"><input type="checkbox" id="mat-toggle"><span class="toggle-slider"></span></label>
+          </div>
+          <div class="mat-fields" id="mat-fields">
+            <div class="field"><label>Maturity EMI Amount (₹)</label><input type="number" id="e-mat-emi" placeholder="0" min="0" inputmode="numeric"></div>
+            <div class="field"><label>Total Maturity Paid Out (₹)</label><input type="number" id="e-mat-total" placeholder="0" min="0" inputmode="numeric"></div>
+          </div>
+        </div>
+        <div id="evening-alert" style="display:none" class="alert"></div>
+        <button class="btn btn-primary" id="btn-evening-submit"><span>Submit Evening Achievement</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TEAM TAB -->
+  <div id="tab-team" class="tab-content scroll-content">
+    <div class="date-chip">📅 <span id="team-date-display"></span></div>
+    <div id="lock-morning-panel" class="lock-panel">
+      <div class="lock-panel-title" id="lock-morning-title">–</div>
+      <p id="lock-morning-desc">–</p>
+      <div class="progress-wrap"><div class="progress-bar" id="lock-morning-bar" style="width:0%"></div></div>
+      <div class="progress-label"><span id="lock-morning-count">–</span><span id="lock-morning-pct">–</span></div>
+    </div>
+    <div id="lock-evening-panel" class="lock-panel">
+      <div class="lock-panel-title" id="lock-evening-title">–</div>
+      <p id="lock-evening-desc">–</p>
+      <div class="progress-wrap"><div class="progress-bar" id="lock-evening-bar" style="width:0%"></div></div>
+      <div class="progress-label"><span id="lock-evening-count">–</span><span id="lock-evening-pct">–</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span class="dot" style="background:var(--navy)"></span>Team Status
+        <button class="btn btn-secondary btn-sm" id="btn-refresh-team" style="margin-left:auto">Refresh</button>
+      </div>
+      <div id="team-list"><div style="text-align:center;padding:20px;color:var(--t4)">Loading…</div></div>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- Leave Modal -->
+<div id="modal-leave" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(15,39,68,.5);align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border-radius:20px;padding:24px;max-width:340px;width:100%">
+    <h3 style="font-size:16px;font-weight:700;margin-bottom:8px" id="leave-modal-title">Mark Leave</h3>
+    <p style="font-size:14px;color:var(--t2);margin-bottom:20px" id="leave-modal-desc">–</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <button class="btn btn-secondary" id="btn-leave-cancel-modal">Cancel</button>
+      <button class="btn btn-amber" id="btn-leave-confirm">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- Resign Modal -->
+<div id="modal-resign" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(15,39,68,.6);align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border-radius:20px;padding:24px;max-width:360px;width:100%">
+    <div style="font-size:36px;text-align:center;margin-bottom:10px">⚠️</div>
+    <h3 style="font-size:16px;font-weight:700;text-align:center;margin-bottom:6px" id="resign-modal-title">Mark as Resigned</h3>
+    <p style="font-size:13px;color:var(--t2);text-align:center;margin-bottom:14px">Disables future entries. Admin password required.</p>
+    <div class="field"><label>Resignation Date</label><input type="date" id="resign-date-inp"></div>
+    <div class="field"><label>Admin Password</label><input type="password" id="resign-admin-pwd" placeholder="Enter admin password" autocomplete="off"></div>
+    <div id="resign-alert" style="display:none;margin-bottom:8px" class="alert alert-error">
+      <span class="alert-icon">✕</span><span id="resign-alert-msg"></span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px">
+      <button class="btn btn-secondary" id="btn-resign-cancel">Cancel</button>
+      <button class="btn btn-danger" id="btn-resign-confirm">Yes, Resign</button>
+    </div>
+  </div>
+</div>
+
+<!-- Warning Popup -->
+<div class="popup-ov" id="popup-warn">
+  <div class="popup-box">
+    <div class="popup-icon" id="pw-icon">⚠️</div>
+    <div class="popup-title" id="pw-title">Warning</div>
+    <div class="popup-body" id="pw-body"></div>
+    <div class="popup-acts" id="pw-acts">
+      <button class="btn btn-secondary" id="pw-cancel">Cancel</button>
+      <button class="btn btn-primary" id="pw-proceed">Proceed</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>IndividualTrack — Admin Panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0f2744;--blue:#1a56db;--blue-lt:#e8f0ff;
+  --teal:#0e7c7b;--teal-lt:#e6f6f6;
+  --amber:#c2770a;--amber-lt:#fff8ed;
+  --green:#0a6640;--green-lt:#edfaf4;
+  --red:#c0392b;--red-lt:#fff0ef;
+  --purple:#5b21b6;--purple-lt:#f2eeff;
+  --orange:#c2410c;--orange-lt:#fff4ee;
+  --bg:#f0f3f8;--surface:#ffffff;--border:#dde3f0;
+  --t1:#0f1824;--t2:#334155;--t3:#64748b;--t4:#94a3b8;
+  --radius:14px;--shadow:0 2px 12px rgba(15,39,68,.08);
+  --shadow-lg:0 8px 32px rgba(15,39,68,.14);
+  --sidebar:240px;
+}
+html{height:100%;-webkit-tap-highlight-color:transparent}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--t1);min-height:100%;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+
+/* ── LOGIN ── */
+#screen-login{display:none;background:var(--navy);justify-content:center;align-items:center;min-height:100vh;padding:24px;}
+#screen-login.active{display:flex}
+.login-card{background:#fff;border-radius:20px;padding:36px 28px;width:100%;max-width:380px;box-shadow:var(--shadow-lg);}
+.login-logo{text-align:center;margin-bottom:28px;}
+.login-logo h1{font-size:26px;font-weight:700;color:var(--navy);}
+.login-logo p{font-size:13px;color:var(--t3);margin-top:4px}
+.login-logo .admin-badge{display:inline-block;background:var(--red-lt);color:var(--red);font-size:11px;font-weight:700;padding:3px 12px;border-radius:20px;margin-top:8px;letter-spacing:.8px;}
+
+/* ── APP SHELL ── */
+#app{display:none;min-height:100vh;}
+#app.active{display:flex;flex-direction:column;}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--navy);height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;position:sticky;top:0;z-index:200;box-shadow:0 2px 8px rgba(0,0,0,.25);}
+.topbar-logo{font-weight:700;font-size:17px;color:#fff;letter-spacing:-.3px;display:flex;align-items:center;gap:8px;}
+.topbar-logo span{background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:.8px;}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+.admin-id{font-size:12px;color:rgba(255,255,255,.6);padding:4px 10px;background:rgba(255,255,255,.08);border-radius:8px;}
+.btn-logout{background:rgba(255,255,255,.1);border:none;color:rgba(255,255,255,.8);padding:6px 12px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;}
+.btn-logout:hover{background:rgba(255,255,255,.2)}
+.menu-toggle{display:none;background:none;border:none;color:#fff;font-size:22px;cursor:pointer;padding:4px;}
+
+/* ── LAYOUT ── */
+.app-body{display:flex;flex:1;min-height:calc(100vh - 56px);}
+
+/* ── SIDEBAR ── */
+.sidebar{width:var(--sidebar);background:var(--surface);border-right:1.5px solid var(--border);display:flex;flex-direction:column;position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto;flex-shrink:0;}
+.sidebar-section{padding:16px 12px 8px;font-size:10px;font-weight:800;color:var(--t4);letter-spacing:1.5px;text-transform:uppercase;}
+.sidebar-btn{display:flex;align-items:center;gap:10px;padding:10px 14px;border:none;background:none;width:100%;text-align:left;font-family:inherit;font-size:14px;font-weight:500;color:var(--t2);cursor:pointer;border-radius:10px;margin:1px 4px;transition:.15s;}
+.sidebar-btn:hover{background:var(--bg);color:var(--t1);}
+.sidebar-btn.active{background:var(--blue-lt);color:var(--blue);font-weight:700;}
+.sidebar-btn .sb-icon{font-size:16px;width:22px;text-align:center;flex-shrink:0;}
+
+/* ── MAIN ── */
+.main-content{flex:1;overflow-y:auto;padding:20px;}
+.panel{display:none;}
+.panel.active{display:block;animation:fadeIn .2s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ── COMPONENTS ── */
+.page-title{font-size:22px;font-weight:700;color:var(--navy);letter-spacing:-.4px;margin-bottom:4px;}
+.page-sub{font-size:13px;color:var(--t3);margin-bottom:20px;}
+
+.card{background:var(--surface);border-radius:var(--radius);padding:20px;margin-bottom:16px;box-shadow:var(--shadow);border:1px solid var(--border);}
+.card-title{font-size:12px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.card-title .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.card-header h3{font-size:16px;font-weight:700;color:var(--t1);}
+
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:11px;font-weight:700;color:var(--t3);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px;}
+.field input,.field select,.field textarea{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;color:var(--t1);background:#fff;transition:border-color .15s;}
+.field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2364748b' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;appearance:none;}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,86,219,.1);}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.field-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 20px;border:none;border-radius:10px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:.15s;}
+.btn-primary{background:var(--blue);color:#fff} .btn-primary:hover{background:#1346c0}
+.btn-danger{background:var(--red-lt);color:var(--red)} .btn-danger:hover{background:#fecaca}
+.btn-success{background:var(--green-lt);color:var(--green)} .btn-success:hover{background:#bbf7d0}
+.btn-amber{background:var(--amber-lt);color:var(--amber)}
+.btn-grey{background:var(--bg);color:var(--t2);border:1.5px solid var(--border)}
+.btn-full{width:100%;}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
+.btn-sm{padding:7px 14px;font-size:13px;border-radius:8px;}
+.btn-xs{padding:5px 10px;font-size:12px;border-radius:7px;border:none;cursor:pointer;font-family:inherit;font-weight:600;transition:.15s;}
+
+.alert{padding:12px 14px;border-radius:10px;font-size:14px;margin-bottom:12px;display:flex;align-items:flex-start;gap:10px;}
+.alert-error{background:var(--red-lt);color:var(--red);border:1px solid #fca5a5}
+.alert-success{background:var(--green-lt);color:var(--green);border:1px solid #86efac}
+.alert-info{background:var(--blue-lt);color:var(--blue);border:1px solid #bfdbfe}
+
+.spinner{width:18px;height:18px;border:2.5px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner-dark{border-color:rgba(26,86,219,.2);border-top-color:var(--blue);}
+.loading-wrap{display:flex;align-items:center;justify-content:center;gap:12px;padding:40px;color:var(--t3);}
+
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+.badge-green{background:var(--green-lt);color:var(--green)} .badge-red{background:var(--red-lt);color:var(--red)}
+.badge-amber{background:var(--amber-lt);color:var(--amber)} .badge-blue{background:var(--blue-lt);color:var(--blue)}
+.badge-grey{background:#f1f5f9;color:var(--t3)} .badge-teal{background:var(--teal-lt);color:var(--teal)}
+.badge-purple{background:var(--purple-lt);color:var(--purple)}
+
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+.tiles-3{grid-template-columns:1fr 1fr 1fr;}
+.tiles-4{grid-template-columns:1fr 1fr 1fr 1fr;}
+.tile{background:var(--surface);border-radius:12px;padding:16px;border:1px solid var(--border);box-shadow:var(--shadow);}
+.tile-label{font-size:11px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
+.tile-value{font-family:'DM Mono',monospace;font-size:22px;font-weight:500;color:var(--t1);}
+.tile-value.green{color:var(--green)} .tile-value.amber{color:var(--amber)} .tile-value.blue{color:var(--blue)} .tile-value.red{color:var(--red)}
+.tile-sub{font-size:11px;color:var(--t3);margin-top:4px;}
+
+.progress-wrap{background:var(--border);border-radius:20px;height:6px;margin:8px 0 4px;overflow:hidden;}
+.progress-bar{height:100%;border-radius:20px;background:var(--blue);transition:width .4s ease;}
+.progress-bar.green{background:#22c55e} .progress-bar.amber{background:var(--amber)} .progress-bar.red{background:var(--red)}
+.progress-label{display:flex;justify-content:space-between;font-size:11px;color:var(--t3);}
+
+.table-wrap{overflow-x:auto;border-radius:12px;border:1px solid var(--border);}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{background:var(--bg);padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--t3);letter-spacing:.5px;text-transform:uppercase;border-bottom:1.5px solid var(--border);white-space:nowrap;}
+td{padding:11px 14px;border-bottom:1px solid var(--border);color:var(--t2);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:#fafbfd;}
+.td-mono{font-family:'DM Mono',monospace;font-size:12px;}
+.td-name{font-weight:600;color:var(--t1);}
+
+.filter-bar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:flex-end;}
+.filter-bar .field{margin-bottom:0;flex:1;min-width:110px;}
+.filter-bar .btn{flex-shrink:0;}
+
+.emp-row{display:flex;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);gap:12px;}
+.emp-row:last-child{border-bottom:none}
+.emp-avatar{width:38px;height:38px;border-radius:50%;background:var(--blue-lt);color:var(--blue);font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.emp-avatar.bh{background:var(--navy);color:#fff}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(15,39,68,.5);z-index:500;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:20px;padding:28px;width:100%;max-width:480px;box-shadow:var(--shadow-lg);max-height:90vh;overflow-y:auto;}
+.modal-title{font-size:18px;font-weight:700;color:var(--navy);margin-bottom:4px;}
+.modal-sub{font-size:13px;color:var(--t3);margin-bottom:20px;}
+.modal-actions{display:flex;gap:10px;margin-top:20px;}
+.modal-actions .btn{flex:1;}
+
+/* AUDIT */
+.audit-row{padding:12px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.audit-row:last-child{border-bottom:none}
+.audit-time{font-size:11px;color:var(--t4);font-family:'DM Mono',monospace;}
+.audit-action{font-weight:700;color:var(--t1);}
+.audit-detail{color:var(--t3);margin-top:2px;}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  :root{--sidebar:0px}
+  .sidebar{position:fixed;left:-260px;width:260px;top:56px;height:calc(100vh - 56px);z-index:150;transition:left .3s ease;box-shadow:var(--shadow-lg);}
+  .sidebar.open{left:0}
+  .menu-toggle{display:block}
+  .field-row{grid-template-columns:1fr}
+  .field-row-3{grid-template-columns:1fr 1fr}
+  .tiles-4{grid-template-columns:1fr 1fr}
+}
+@media(min-width:769px){.main-content{max-width:900px;}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="screen-login" class="active">
+  <div class="login-card">
+    <div class="login-logo">
+      <h1>IndividualTrack</h1>
+      <p>HO Admin Panel</p>
+      <div class="admin-badge">🔐 ADMIN ACCESS</div>
+    </div>
+    <div class="field">
+      <label>Admin Password</label>
+      <input type="password" id="inp-admin-pwd" placeholder="Enter master password" autocomplete="off">
+    </div>
+    <div id="login-err" style="display:none" class="alert alert-error">
+      <span>✕</span><span id="login-err-msg"></span>
+    </div>
+    <button class="btn btn-primary btn-full" id="btn-admin-login">
+      <span>Access Admin Panel</span>
+    </button>
+    <p style="text-align:center;font-size:12px;color:var(--t4);margin-top:14px">
+      <a href="index.html" style="color:var(--blue);text-decoration:none">← Back to Entry Portal</a>
+    </p>
+  </div>
+</div>
+
+<!-- ADMIN APP -->
+<div id="app">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:12px">
+      <button class="menu-toggle" id="menu-toggle">☰</button>
+      <div class="topbar-logo"><a href="index.html" style="color:rgba(255,255,255,.75);text-decoration:none;font-size:11px">← Entry</a>&nbsp;&nbsp;IndividualTrack <span>ADMIN</span></div>
+    </div>
+    <div class="topbar-right">
+      <span class="admin-id">HO Admin</span>
+      <button class="btn-logout" id="btn-logout">Logout</button>
+    </div>
+  </div>
+
+  <div class="app-body">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-section">Management</div>
+      <button class="sidebar-btn active" data-panel="employees"><span class="sb-icon">👥</span>Employees</button>
+      <button class="sidebar-btn" data-panel="branches"><span class="sb-icon">🏢</span>Branches</button>
+      <button class="sidebar-btn" data-panel="targets"><span class="sb-icon">🎯</span>Targets</button>
+      <button class="sidebar-btn" data-panel="audit"><span class="sb-icon">📋</span>Audit Log</button>
+      <button class="sidebar-btn" data-panel="holidays"><span class="sb-icon">🗓️</span>Holidays</button>
+
+      <div class="sidebar-section">Reports</div>
+      <button class="sidebar-btn" data-panel="r-daily"><span class="sb-icon">📅</span>Daily (All)</button>
+      <button class="sidebar-btn" data-panel="r-monitor"><span class="sb-icon">🔴</span>Daily Monitor</button>
+      <button class="sidebar-btn" data-panel="r-monthly"><span class="sb-icon">📈</span>Monthly Detail</button>
+      <button class="sidebar-btn" data-panel="r-yearly"><span class="sb-icon">📊</span>Yearly Progress</button>
+      <button class="sidebar-btn" data-panel="r-leaderboard"><span class="sb-icon">🏆</span>Leaderboard</button>
+      <button class="sidebar-btn" data-panel="r-discipline"><span class="sb-icon">⚡</span>Discipline</button>
+      <button class="sidebar-btn" data-panel="r-summary"><span class="sb-icon">🗂️</span>Summary</button>
+      <button class="sidebar-btn" data-panel="r-download"><span class="sb-icon">⬇️</span>Download</button>
+      <button class="sidebar-btn" data-panel="r-anomaly"><span class="sb-icon">🔍</span>Anomalies</button>
+      <button class="sidebar-btn" data-panel="r-search"><span class="sb-icon">🧠</span>Employee Search</button>
+    </aside>
+
+    <main class="main-content">
+
+      <!-- ══ EMPLOYEES ══════════════════════════════════════ -->
+      <div id="panel-employees" class="panel active">
+        <div class="page-title">Employee Management</div>
+        <div class="page-sub">Add, edit, and manage all employee records</div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>All Employees</h3>
+            <button class="btn btn-primary btn-sm" id="btn-add-emp">+ Add Employee</button>
+          </div>
+          <div class="filter-bar">
+            <div class="field"><label>Filter Branch</label>
+              <select id="emp-filter-branch"><option value="">All Branches</option></select>
+            </div>
+            <div class="field"><label>Status</label>
+              <select id="emp-filter-status">
+                <option value="">All</option>
+                <option value="ACTIVE">Active</option>
+                <option value="ON_LEAVE">On Leave</option>
+                <option value="RESIGNED">Resigned</option>
+              </select>
+            </div>
+            <button class="btn btn-grey btn-sm" id="btn-load-emps">Load</button>
+          </div>
+          <div id="emp-list"><div class="loading-wrap"><div class="spinner-dark spinner"></div> Loading employees…</div></div>
+        </div>
+      </div>
+
+      <!-- ══ BRANCHES ════════════════════════════════════════ -->
+      <div id="panel-branches" class="panel">
+        <div class="page-title">Branch Management</div>
+        <div class="page-sub">Add branches and manage passwords</div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>All Branches</h3>
+            <button class="btn btn-primary btn-sm" id="btn-add-branch">+ Add Branch</button>
+          </div>
+          <div id="branch-list"><div class="loading-wrap"><div class="spinner-dark spinner"></div> Loading branches…</div></div>
+        </div>
+      </div>
+
+      <!-- ══ TARGETS ══════════════════════════════════════════ -->
+      <div id="panel-targets" class="panel">
+        <div class="page-title">Target Management</div>
+        <div class="page-sub">Set yearly targets — monthly split is automatic (yearly ÷ 12)</div>
+
+        <!-- ── BULK: BRANCH HEADS ───────────────────────────── -->
+        <div class="card">
+          <div class="card-header"><h3>🏢 Set Target for All Branch Heads</h3>
+            <p style="font-size:13px;color:var(--t3);margin-top:4px">One set of figures applied to every Branch Head across all branches.</p>
+          </div>
+          <div class="field-row-3">
+            <div class="field"><label>Yearly Inv Target (₹)</label>
+              <input type="number" id="bh-inv" placeholder="0" min="0">
+            </div>
+            <div class="field"><label>Yearly RD Count</label>
+              <input type="number" id="bh-rd-count" placeholder="0" min="0">
+            </div>
+            <div class="field"><label>Yearly RD Amount (₹)</label>
+              <input type="number" id="bh-rd-amt" placeholder="0" min="0">
+            </div>
+          </div>
+          <div id="bulk-bh-alert" style="display:none" class="alert"></div>
+          <button class="btn btn-primary" id="btn-bulk-bh-save">Apply to All Branch Heads</button>
+        </div>
+
+        <!-- ── BULK: ALL STAFF ──────────────────────────────── -->
+        <div class="card">
+          <div class="card-header"><h3>👥 Set Target for All Other Staff</h3>
+            <p style="font-size:13px;color:var(--t3);margin-top:4px">One set of figures applied to every non-BH active employee.</p>
+          </div>
+          <div class="field-row-3">
+            <div class="field"><label>Yearly Inv Target (₹)</label>
+              <input type="number" id="staff-inv" placeholder="0" min="0">
+            </div>
+            <div class="field"><label>Yearly RD Count</label>
+              <input type="number" id="staff-rd-count" placeholder="0" min="0">
+            </div>
+            <div class="field"><label>Yearly RD Amount (₹)</label>
+              <input type="number" id="staff-rd-amt" placeholder="0" min="0">
+            </div>
+          </div>
+          <div id="bulk-staff-alert" style="display:none" class="alert"></div>
+          <button class="btn btn-primary" id="btn-bulk-staff-save">Apply to All Other Staff</button>
+        </div>
+
+        <!-- ── INDIVIDUAL OVERRIDE ──────────────────────────── -->
+        <div class="card">
+          <div class="card-header"><h3>👤 Individual Override</h3>
+            <p style="font-size:13px;color:var(--t3);margin-top:4px">Override the target for one specific employee.</p>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>Branch</label>
+              <select id="tgt-branch-filter"><option value="">All Branches</option></select>
+            </div>
+            <div class="field"><label>Employee</label>
+              <select id="tgt-emp-sel"><option value="">— Select Employee —</option></select>
+            </div>
+          </div>
+          <div class="field-row-3">
+            <div class="field"><label>Yearly Inv Target (₹)</label>
+              <input type="number" id="tgt-inv" placeholder="0" min="0">
+            </div>
+            <div class="field"><label>Yearly RD Count</label>
+              <input type="number" id="tgt-rd-count" placeholder="0" min="0">
+            </div>
+            <div class="field"><label>Yearly RD Amount (₹)</label>
+              <input type="number" id="tgt-rd-amt" placeholder="0" min="0">
+            </div>
+          </div>
+          <div id="tgt-set-alert" style="display:none" class="alert"></div>
+          <button class="btn btn-primary" id="btn-set-target">Save Individual Target</button>
+        </div>
+
+        <!-- ── SUMMARY ──────────────────────────────────────── -->
+        <div class="card">
+          <div class="card-header"><h3>Current Target Summary</h3></div>
+          <div class="filter-bar" style="margin-bottom:10px">
+            <div class="field"><label>Branch</label>
+              <select id="tgt-sum-branch"><option value="">All Branches</option></select>
+            </div>
+            <button class="btn btn-grey btn-sm" id="btn-load-tgt-sum">Load</button>
+          </div>
+          <div id="tgt-summary-list"><p style="padding:12px;color:var(--t4)">Click Load to view.</p></div>
+        </div>
+      </div>
+
+      <!-- ══ AUDIT LOG ════════════════════════════════════════ -->
+      <div id="panel-audit" class="panel">
+        <div class="page-title">Audit Log</div>
+        <div class="page-sub">Complete trail of every write action</div>
+        <div class="card">
+          <div class="filter-bar">
+            <div class="field"><label>Branch</label>
+              <select id="audit-branch"><option value="">All Branches</option></select>
+            </div>
+            <div class="field"><label>Date From</label>
+              <input type="date" id="audit-from">
+            </div>
+            <div class="field"><label>Date To</label>
+              <input type="date" id="audit-to">
+            </div>
+            <button class="btn btn-grey btn-sm" id="btn-load-audit">Load</button>
+          </div>
+          <div id="audit-list"></div>
+        </div>
+      </div>
+
+      <!-- ══ HOLIDAYS ══════════════════════════════════════════ -->
+      <div id="panel-holidays" class="panel">
+        <div class="page-title">Public Holidays</div>
+        <div class="page-sub">Mark public holidays — excluded from working day count &amp; DRR calculation</div>
+        <div class="card">
+          <div class="filter-bar" style="align-items:flex-end">
+            <div class="field"><label>Date</label><input type="date" id="hl-date"></div>
+            <div class="field"><label>Holiday Name</label><input type="text" id="hl-name" placeholder="e.g. Diwali"></div>
+            <button class="btn btn-primary btn-sm" id="btn-add-holiday">+ Add Holiday</button>
+          </div>
+          <div id="hl-alert" style="display:none;margin-bottom:10px" class="alert"></div>
+          <div id="holidays-list"><div style="padding:16px;text-align:center;color:var(--t4)">Loading…</div></div>
+        </div>
+      </div>
+
+      <!-- ══ REPORT: DAILY ALL ═════════════════════════════════ -->
+      <div id="panel-r-daily" class="panel">
+        <div class="page-title">Daily Report — All Branches</div>
+        <div class="page-sub">Cross-branch daily commitment & achievement summary</div>
+        <div class="filter-bar">
+          <div class="field"><label>Date</label><input type="date" id="rdaily-date"></div>
+          <div class="field"><label>Branch</label>
+            <select id="rdaily-branch"><option value="">All Branches</option></select>
+          </div>
+          <button class="btn btn-primary btn-sm" id="btn-load-rdaily">Load</button>
+        </div>
+        <div id="rdaily-result"></div>
+      </div>
+
+      <!-- ══ REPORT: MONTHLY DETAIL ════════════════════════════ -->
+      <div id="panel-r-monthly" class="panel">
+        <div class="page-title">Detailed Monthly Report</div>
+        <div class="page-sub">Target vs achieved vs shortfall vs DRR per branch & employee</div>
+        <div class="filter-bar">
+          <div class="field"><label>Month</label><select id="rmon-month"></select></div>
+          <div class="field"><label>Year</label><select id="rmon-year"></select></div>
+          <div class="field"><label>Branch</label><select id="rmon-branch"><option value="">All Branches</option></select></div>
+          <button class="btn btn-primary btn-sm" id="btn-load-rmon">Load</button>
+          <button class="btn btn-success btn-sm" id="btn-download-rmon" style="display:none">⬇️ CSV</button>
+        </div>
+        <div id="rmon-result"></div>
+      </div>
+
+      <!-- ══ REPORT: YEARLY ════════════════════════════════════ -->
+      <div id="panel-r-yearly" class="panel">
+        <div class="page-title">Yearly Progress Report</div>
+        <div class="page-sub">FY Apr–Mar waterfall: monthly achievement vs target, YTD%, forecast</div>
+        <div class="filter-bar">
+          <div class="field"><label>Branch</label><select id="ryear-branch"><option value="">All Branches</option></select></div>
+          <button class="btn btn-primary btn-sm" id="btn-load-ryear">Load</button>
+          <button class="btn btn-success btn-sm" id="btn-download-ryear" style="display:none">⬇️ CSV</button>
+        </div>
+        <div id="ryear-result"></div>
+      </div>
+
+      <!-- ══ REPORT: LEADERBOARD ═══════════════════════════════ -->
+      <div id="panel-r-leaderboard" class="panel">
+        <div class="page-title">Employee Leaderboard</div>
+        <div class="page-sub">Ranked by achievement %, DRR compliance, consistency</div>
+        <div class="filter-bar">
+          <div class="field"><label>Month</label><select id="rlb-month"></select></div>
+          <div class="field"><label>Year</label><select id="rlb-year"></select></div>
+          <div class="field"><label>Branch</label><select id="rlb-branch"><option value="">All Branches</option></select></div>
+          <div class="field"><label>Type</label>
+            <select id="rlb-type">
+              <option value="investment">💼 Investment</option>
+              <option value="rd">🏦 RD</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-sm" id="btn-load-rlb">Load</button>
+        </div>
+        <div id="rlb-result"></div>
+      </div>
+
+      <!-- ══ REPORT: DISCIPLINE ════════════════════════════════ -->
+      <div id="panel-r-discipline" class="panel">
+        <div class="page-title">Submission Discipline Report</div>
+        <div class="page-sub">Submission rate, missing days, late entries per employee</div>
+        <div class="filter-bar">
+          <div class="field"><label>Month</label><select id="rdis-month"></select></div>
+          <div class="field"><label>Year</label><select id="rdis-year"></select></div>
+          <div class="field"><label>Branch</label><select id="rdis-branch"><option value="">All Branches</option></select></div>
+          <button class="btn btn-primary btn-sm" id="btn-load-rdis">Load</button>
+        </div>
+        <div id="rdis-result"></div>
+      </div>
+
+      <!-- ══ REPORT: SUMMARY ═══════════════════════════════════ -->
+      <div id="panel-r-summary" class="panel">
+        <div class="page-title">Summary Report</div>
+        <div class="page-sub">Cross-branch overview — target vs achieved per employee this month</div>
+        <div class="filter-bar">
+          <div class="field"><label>Month</label><select id="rsum-month"></select></div>
+          <div class="field"><label>Year</label><select id="rsum-year"></select></div>
+          <div class="field"><label>Type</label>
+            <select id="rsum-type">
+              <option value="investment">💼 Investment</option>
+              <option value="rd">🏦 RD</option>
+              <option value="both">📊 Both</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-sm" id="btn-load-rsum">Load</button>
+          <button class="btn btn-success btn-sm" id="btn-download-rsum" style="display:none">⬇️ CSV</button>
+        </div>
+        <div id="rsum-result"></div>
+      </div>
+
+      <!-- ══ DOWNLOAD ══════════════════════════════════════════ -->
+      <div id="panel-r-download" class="panel">
+        <div class="page-title">Download Report</div>
+        <div class="page-sub">Month-wise Investment &amp; RD data — Investment and RD as separate sections</div>
+        <div class="filter-bar">
+          <div class="field"><label>FY</label>
+            <select id="adl-fy"><option value="2026-27">2026-27</option><option value="2025-26">2025-26</option></select>
+          </div>
+          <div class="field"><label>Section</label>
+            <select id="adl-type"><option value="investment">💼 Investment</option><option value="rd">🏦 RD</option></select>
+          </div>
+          <div class="field"><label>Branch</label>
+            <select id="adl-branch"><option value="">All Branches</option></select>
+          </div>
+          <button class="btn btn-primary btn-sm" id="btn-adl-load">Load &amp; Download</button>
+        </div>
+        <div id="adl-result"></div>
+      </div>
+
+      <!-- ══ EMPLOYEE SEARCH (AI-POWERED) ════════════════════════ -->
+      <div id="panel-r-search" class="panel">
+        <div class="page-title">🧠 Employee Intelligence Report</div>
+        <div class="page-sub">A-to-Z profile with AI-powered predictive analytics — performance, discipline, forecast &amp; behavioural insights</div>
+        <div class="filter-bar">
+          <div class="field"><label>Search by Name or Employee Code</label>
+            <input type="text" id="search-emp-query" placeholder="Type name or EMP code…" autocomplete="off" list="search-emp-datalist">
+            <datalist id="search-emp-datalist"></datalist>
+          </div>
+          <div class="field"><label>Period (Year)</label>
+            <select id="search-emp-year"></select>
+          </div>
+          <button class="btn btn-primary btn-sm" id="btn-load-search">🔍 Generate Report</button>
+          <button class="btn btn-success btn-sm" id="btn-download-search" style="display:none">⬇️ Export PDF</button>
+        </div>
+        <div id="search-result"></div>
+      </div>
+
+      <!-- ══ ANOMALY REPORT ════════════════════════════════════ -->
+      <div id="panel-r-anomaly" class="panel">
+        <div class="page-title">Anomaly Report</div>
+        <div class="page-sub">Security flags — device conflicts, time anomalies, bulk submissions</div>
+        <div class="filter-bar">
+          <div class="field"><label>Branch</label>
+            <select id="ano-branch"><option value="">All Branches</option></select>
+          </div>
+          <div class="field"><label>Month</label><select id="ano-month"></select></div>
+          <div class="field"><label>Year</label><select id="ano-year"></select></div>
+          <button class="btn btn-primary btn-sm" id="btn-load-ano">Load</button>
+        </div>
+        <div id="ano-result"></div>
+      </div>
+
+      <!-- ══ DAILY MONITOR ════════════════════════════════════ -->
+      <div id="panel-r-monitor" class="panel">
+        <div class="page-title">Daily Monitor</div>
+        <div class="page-sub">Branch-wise morning &amp; evening submission status — incomplete, partial and complete</div>
+        <div class="filter-bar">
+          <div class="field"><label>Date</label><input type="date" id="monitor-date"></div>
+          <div class="field"><label>View</label>
+            <select id="monitor-view">
+              <option value="all">All Branches</option>
+              <option value="incomplete">Not Started Only</option>
+              <option value="partial">Partial Only</option>
+              <option value="complete">Complete Only</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-sm" id="btn-load-monitor">Load</button>
+          <button class="btn btn-grey btn-sm" id="btn-auto-refresh-monitor">⟳ Auto</button>
+        </div>
+        <div id="monitor-result"></div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- ══ MODAL: ADD EMPLOYEE ══════════════════════════════════ -->
+<div class="modal-overlay" id="modal-add-emp">
+  <div class="modal">
+    <div class="modal-title" id="modal-emp-title">Add Employee</div>
+    <div class="modal-sub">Fill in all required fields</div>
+    <input type="hidden" id="edit-emp-id">
+    <div class="field-row">
+      <div class="field"><label>Employee ID *</label><input id="ae-empid" placeholder="EMP001"></div>
+      <div class="field"><label>Full Name *</label><input id="ae-name" placeholder="Full Name"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Branch *</label>
+        <select id="ae-branch"><option value="">Select Branch</option></select>
+      </div>
+      <div class="field"><label>Designation</label><input id="ae-designation" placeholder="e.g. Relationship Manager"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Role *</label>
+        <select id="ae-role">
+          <option value="EMPLOYEE">Employee</option>
+          <option value="BRANCH_HEAD">Branch Head</option>
+        </select>
+      </div>
+      <div class="field"><label>Join Date *</label><input type="date" id="ae-joindate"></div>
+    </div>
+    <div class="field"><label>Phone</label><input id="ae-phone" placeholder="Optional"></div>
+    <div class="field"><label>Notes</label><textarea id="ae-notes" rows="2" placeholder="Optional admin notes"></textarea></div>
+    <div id="ae-alert" style="display:none" class="alert"></div>
+    <div class="modal-actions">
+      <button class="btn btn-grey" id="btn-ae-cancel">Cancel</button>
+      <button class="btn btn-primary" id="btn-ae-save">Save Employee</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: ADD BRANCH ════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-add-branch">
+  <div class="modal">
+    <div class="modal-title">Add Branch</div>
+    <div class="modal-sub">Create a new branch entry</div>
+    <div class="field-row">
+      <div class="field"><label>Branch ID *</label><input id="ab-id" placeholder="BLR01"></div>
+      <div class="field"><label>Branch Name *</label><input id="ab-name" placeholder="Branch Full Name"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Entry Password *</label><input id="ab-pwd" placeholder="Employee entry password"></div>
+      <div class="field"><label>Report Password *</label><input id="ab-rpwd" placeholder="Reports password"></div>
+    </div>
+    <div id="ab-alert" style="display:none" class="alert"></div>
+    <div class="modal-actions">
+      <button class="btn btn-grey" id="btn-ab-cancel">Cancel</button>
+      <button class="btn btn-primary" id="btn-ab-save">Create Branch</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: UPDATE STATUS ══════════════════════════════════ -->
+<div class="modal-overlay" id="modal-status">
+  <div class="modal">
+    <div class="modal-title" id="modal-status-title">Update Employee Status</div>
+    <div class="modal-sub" id="modal-status-sub"></div>
+    <input type="hidden" id="status-empid">
+    <div class="field"><label>New Status</label>
+      <select id="status-sel">
+        <option value="ACTIVE">Active</option>
+        <option value="ON_LEAVE">On Leave</option>
+        <option value="RESIGNED">Resigned</option>
+        <option value="INACTIVE">Inactive</option>
+      </select>
+    </div>
+    <div class="field" id="resign-date-wrap" style="display:none">
+      <label>Resignation Date</label>
+      <input type="date" id="resign-date">
+    </div>
+    <div id="status-alert" style="display:none" class="alert"></div>
+    <div class="modal-actions">
+      <button class="btn btn-grey" id="btn-status-cancel">Cancel</button>
+      <button class="btn btn-danger" id="btn-status-save">Update Status</button>
+    </div>
+  </div>
+</div>
+
+<script src="admin.js"></script>
+</body>
+</html>
