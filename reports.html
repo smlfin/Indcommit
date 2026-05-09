@@ -6,187 +6,7 @@
 <title>IndividualTrack — Branch Reports</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --navy:#0f2744;--blue:#1a56db;--blue-lt:#e8f0ff;
-  --teal:#0e7c7b;--teal-lt:#e6f6f6;
-  --amber:#c2770a;--amber-lt:#fff8ed;
-  --green:#0a6640;--green-lt:#edfaf4;
-  --red:#c0392b;--red-lt:#fff0ef;
-  --purple:#5b21b6;--purple-lt:#f2eeff;
-  --orange:#c2410c;--orange-lt:#fff4ee;
-  --bg:#f4f6fb;--surface:#ffffff;--border:#dde3f0;
-  --t1:#0f1824;--t2:#334155;--t3:#64748b;--t4:#94a3b8;
-  --radius:14px;--shadow:0 2px 12px rgba(15,39,68,.08);
-  --shadow-lg:0 8px 32px rgba(15,39,68,.14);
-}
-html{height:100%;-webkit-tap-highlight-color:transparent}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--t1);min-height:100%;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;}
-#app{min-height:100vh;display:flex;flex-direction:column}
-
-/* TOPBAR */
-.topbar{background:var(--navy);padding:0 16px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.25);}
-.topbar-logo{font-weight:700;font-size:17px;color:#fff;letter-spacing:-.3px;display:flex;align-items:center;gap:8px;}
-.topbar-logo span{background:var(--teal);color:#fff;font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;letter-spacing:.5px;}
-.topbar-right{display:flex;align-items:center;gap:8px}
-.topbar-branch{font-size:13px;color:rgba(255,255,255,.7);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.btn-logout{background:rgba(255,255,255,.1);border:none;color:rgba(255,255,255,.8);padding:6px 12px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;transition:.15s;}
-.btn-logout:hover{background:rgba(255,255,255,.2)}
-
-/* SCREENS */
-.screen{display:none;flex:1;flex-direction:column;animation:fadeIn .2s ease}
-.screen.active{display:flex}
-@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-
-/* LOGIN */
-#screen-login{background:var(--navy);justify-content:center;align-items:center;padding:24px 20px;min-height:100vh;}
-.login-card{background:#fff;border-radius:20px;padding:32px 24px;width:100%;max-width:380px;box-shadow:var(--shadow-lg);}
-.login-logo{text-align:center;margin-bottom:28px;}
-.login-logo h1{font-size:26px;font-weight:700;color:var(--navy);letter-spacing:-.5px;}
-.login-logo p{font-size:13px;color:var(--t3);margin-top:4px;}
-.login-logo .badge-reports{display:inline-block;background:var(--teal-lt);color:var(--teal);font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-top:8px;letter-spacing:.5px;}
-
-/* FORMS */
-.field{margin-bottom:14px}
-.field label{display:block;font-size:12px;font-weight:600;color:var(--t3);letter-spacing:.3px;text-transform:uppercase;margin-bottom:6px;}
-.field select,.field input{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:15px;color:var(--t1);background:#fff;transition:border-color .15s,box-shadow .15s;appearance:none;-webkit-appearance:none;}
-.field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2364748b' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;}
-.field select:focus,.field input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,86,219,.12);}
-
-/* BUTTONS */
-.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;border:none;border-radius:10px;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;transition:.15s;letter-spacing:-.1px;}
-.btn-primary{background:var(--blue);color:#fff}
-.btn-primary:hover{background:#1346c0}
-.btn-primary:active{transform:scale(.98)}
-.btn-teal{background:var(--teal);color:#fff}
-.btn-teal:hover{background:#0a6a69}
-.btn-secondary{background:var(--blue-lt);color:var(--blue)}
-.btn-secondary:hover{background:#d6e5ff}
-.btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important}
-.btn-sm{padding:9px 16px;font-size:13px;width:auto;border-radius:8px}
-.btn-xs{padding:6px 12px;font-size:12px;width:auto;border-radius:7px;font-weight:600;border:none;cursor:pointer;font-family:inherit;transition:.15s;}
-
-/* ALERTS */
-.alert{padding:12px 14px;border-radius:10px;font-size:14px;margin-bottom:12px;display:flex;align-items:flex-start;gap:10px;}
-.alert-success{background:var(--green-lt);color:var(--green);border:1px solid #86efac}
-.alert-error{background:var(--red-lt);color:var(--red);border:1px solid #fca5a5}
-.alert-info{background:var(--blue-lt);color:var(--blue);border:1px solid #bfdbfe}
-.alert-icon{font-size:16px;flex-shrink:0;margin-top:1px}
-
-/* SPINNER */
-.spinner{width:20px;height:20px;border:2.5px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;flex-shrink:0;}
-@keyframes spin{to{transform:rotate(360deg)}}
-.spinner-dark{border-color:rgba(26,86,219,.2);border-top-color:var(--blue);}
-.loading-wrap{display:flex;align-items:center;justify-content:center;gap:12px;padding:40px;color:var(--t3);}
-
-/* NAV */
-.report-nav{background:var(--surface);border-bottom:1.5px solid var(--border);position:sticky;top:56px;z-index:90;overflow-x:auto;white-space:nowrap;scrollbar-width:none;}
-.report-nav::-webkit-scrollbar{display:none}
-.report-nav-inner{display:inline-flex;padding:0 12px;}
-.nav-btn{padding:14px 14px;border:none;background:none;font-family:inherit;font-size:13px;font-weight:600;color:var(--t3);cursor:pointer;border-bottom:2.5px solid transparent;transition:.15s;white-space:nowrap;display:inline-flex;align-items:center;gap:6px;}
-.nav-btn.active{color:var(--teal);border-bottom-color:var(--teal);}
-.nav-btn:hover:not(.active){color:var(--t2)}
-
-/* MAIN CONTENT */
-.main-content{flex:1;padding:16px;overflow-y:auto;}
-.report-panel{display:none;}
-.report-panel.active{display:block;}
-
-/* CARDS */
-.card{background:var(--surface);border-radius:var(--radius);padding:18px;margin-bottom:14px;box-shadow:var(--shadow);border:1px solid var(--border);}
-.card-title{font-size:13px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
-.card-title .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
-.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
-.card-header h3{font-size:15px;font-weight:700;color:var(--t1);}
-
-/* TILES */
-.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
-.tiles-3{grid-template-columns:1fr 1fr 1fr;}
-.tile{background:var(--surface);border-radius:12px;padding:14px;border:1px solid var(--border);box-shadow:var(--shadow);}
-.tile-label{font-size:11px;color:var(--t3);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
-.tile-value{font-family:'DM Mono',monospace;font-size:20px;font-weight:500;color:var(--t1);}
-.tile-value.green{color:var(--green)} .tile-value.amber{color:var(--amber)} .tile-value.blue{color:var(--blue)} .tile-value.red{color:var(--red)}
-.tile-sub{font-size:11px;color:var(--t3);margin-top:3px;}
-
-/* BADGES */
-.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.3px;}
-.badge-green{background:var(--green-lt);color:var(--green)} .badge-red{background:var(--red-lt);color:var(--red)}
-.badge-amber{background:var(--amber-lt);color:var(--amber)} .badge-blue{background:var(--blue-lt);color:var(--blue)}
-.badge-grey{background:#f1f5f9;color:var(--t3)} .badge-teal{background:var(--teal-lt);color:var(--teal)}
-
-/* PROGRESS */
-.progress-wrap{background:var(--border);border-radius:20px;height:6px;margin:6px 0 3px;overflow:hidden;}
-.progress-bar{height:100%;border-radius:20px;background:var(--blue);transition:width .4s ease;}
-.progress-bar.green{background:#22c55e} .progress-bar.amber{background:var(--amber)} .progress-bar.red{background:var(--red)}
-.progress-label{display:flex;justify-content:space-between;font-size:11px;color:var(--t3);font-weight:500;}
-
-/* FILTER BAR */
-.filter-bar{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
-.filter-bar .field{margin-bottom:0;flex:1;min-width:120px;}
-.filter-bar .btn{width:auto;padding:12px 18px;flex-shrink:0;align-self:flex-end;}
-
-/* TABLE */
-.table-wrap{overflow-x:auto;border-radius:12px;border:1px solid var(--border);}
-table{width:100%;border-collapse:collapse;font-size:14px;}
-th{background:var(--bg);padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--t3);letter-spacing:.5px;text-transform:uppercase;border-bottom:1.5px solid var(--border);white-space:nowrap;}
-td{padding:12px 14px;border-bottom:1px solid var(--border);color:var(--t2);vertical-align:middle;}
-tr:last-child td{border-bottom:none;}
-tr:hover td{background:#fafbfd;}
-.td-mono{font-family:'DM Mono',monospace;font-size:13px;}
-.td-name{font-weight:600;color:var(--t1);}
-
-/* EMP ROWS */
-.emp-row{display:flex;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);gap:10px;}
-.emp-row:last-child{border-bottom:none}
-.emp-avatar{width:36px;height:36px;border-radius:50%;background:var(--blue-lt);color:var(--blue);font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.emp-avatar.bh{background:var(--navy);color:#fff}
-.emp-avatar.leave{background:#f1f5f9;color:var(--t4)}
-.emp-name{flex:1;font-size:14px;font-weight:600;color:var(--t1)}
-.emp-meta{font-size:12px;color:var(--t3)}
-
-/* DATE CHIP */
-.date-chip{display:inline-flex;align-items:center;gap:6px;background:var(--blue-lt);color:var(--blue);padding:6px 12px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:16px;}
-
-/* SECTION TITLE */
-.section-title{font-size:18px;font-weight:700;color:var(--navy);letter-spacing:-.3px;margin-bottom:4px;}
-.section-sub{font-size:13px;color:var(--t3);margin-bottom:16px;}
-
-/* HEALTH CARD */
-.health-grade{width:64px;height:64px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;flex-shrink:0;}
-.grade-a{background:var(--green-lt);color:var(--green)} .grade-b{background:var(--blue-lt);color:var(--blue)}
-.grade-c{background:var(--amber-lt);color:var(--amber)} .grade-d{background:var(--red-lt);color:var(--red)}
-
-/* CALENDAR GRID */
-.leave-calendar{display:grid;gap:2px;}
-.cal-header{display:grid;grid-template-columns:140px repeat(31,24px);gap:2px;margin-bottom:4px;}
-.cal-header-cell{font-size:10px;font-weight:700;color:var(--t4);text-align:center;padding:2px 0;}
-.cal-row{display:grid;grid-template-columns:140px repeat(31,24px);gap:2px;align-items:center;}
-.cal-name{font-size:12px;font-weight:600;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:8px;}
-.cal-cell{width:24px;height:24px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;}
-.cal-cell.leave-cl{background:var(--blue-lt);color:var(--blue);}
-.cal-cell.leave-sl{background:var(--red-lt);color:var(--red);}
-.cal-cell.leave-lwp{background:var(--purple-lt);color:var(--purple);}
-.cal-cell.leave-hd{background:var(--amber-lt);color:var(--amber);}
-.cal-cell.leave-wfh{background:var(--teal-lt);color:var(--teal);}
-.cal-cell.empty{background:var(--bg);}
-.cal-cell.sun{background:#f8f8f8;opacity:.4;}
-
-/* PERF CARD */
-.perf-metric{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);}
-.perf-metric:last-child{border-bottom:none}
-.perf-label{font-size:13px;color:var(--t2);font-weight:500;}
-.perf-val{font-family:'DM Mono',monospace;font-size:14px;font-weight:600;color:var(--t1);}
-
-/* EMPTY STATE */
-.empty-state{text-align:center;padding:48px 24px;color:var(--t4);}
-.empty-state .empty-icon{font-size:48px;margin-bottom:12px;}
-.empty-state p{font-size:14px;}
-
-/* MOBILE */
-@media(max-width:380px){.tiles{grid-template-columns:1fr}.tiles-3{grid-template-columns:1fr 1fr}}
-@media(min-width:640px){.main-content{max-width:720px;margin:0 auto;padding:20px;}.filter-bar{flex-wrap:nowrap;}}
-</style>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div id="app">
@@ -214,7 +34,7 @@ tr:hover td{background:#fafbfd;}
       <span>Access Reports</span>
     </button>
     <p style="text-align:center;font-size:12px;color:var(--t4);margin-top:14px">
-      <a href="index.html" style="color:var(--blue);text-decoration:none;">← Back to Daily Entry</a>
+      <a href='/' style='color:var(--blue);text-decoration:none;'>← Back to Daily Entry</a>
     </p>
   </div>
 </div>
@@ -280,12 +100,21 @@ tr:hover td{background:#fafbfd;}
       <div class="section-title">Monthly Summary</div>
       <div class="section-sub">Employee-level rollup — total commitment, achievement, DRR, zero-days</div>
 
-      <div class="filter-bar">
-        <div class="field"><label>Month</label>
-          <select id="monthly-month"></select>
+      <div class="filter-bar period-filter">
+        <div class="period-group">
+          <div class="period-label">From</div>
+          <div class="period-selects">
+            <div class="field"><select id="monthly-month"></select></div>
+            <div class="field"><select id="monthly-year"></select></div>
+          </div>
         </div>
-        <div class="field"><label>Year</label>
-          <select id="monthly-year"></select>
+        <div class="period-arrow">→</div>
+        <div class="period-group">
+          <div class="period-label">To</div>
+          <div class="period-selects">
+            <div class="field"><select id="monthly-month-to"></select></div>
+            <div class="field"><select id="monthly-year-to"></select></div>
+          </div>
         </div>
         <button class="btn btn-teal btn-sm" id="btn-load-monthly">Load</button>
       </div>
