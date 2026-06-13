@@ -192,7 +192,7 @@ tr:hover td{background:#fafbfd;}
       <span>Access Admin Panel</span>
     </button>
     <p style="text-align:center;font-size:12px;color:var(--t4);margin-top:14px">
-      <a href='/' style='color:var(--blue);text-decoration:none'>← Back to Entry Portal</a>
+      <a href="index.html" style="color:var(--blue);text-decoration:none">← Back to Entry Portal</a>
     </p>
   </div>
 </div>
@@ -202,7 +202,7 @@ tr:hover td{background:#fafbfd;}
   <div class="topbar">
     <div style="display:flex;align-items:center;gap:12px">
       <button class="menu-toggle" id="menu-toggle">☰</button>
-      <div class="topbar-logo"><a href='/' style='color:rgba(255,255,255,.75);text-decoration:none;font-size:11px'>← Entry</a>&nbsp;&nbsp;IndividualTrack <span>ADMIN</span></div>
+      <div class="topbar-logo"><a href="index.html" style="color:rgba(255,255,255,.75);text-decoration:none;font-size:11px">← Entry</a>&nbsp;&nbsp;IndividualTrack <span>ADMIN</span></div>
     </div>
     <div class="topbar-right">
       <span class="admin-id">HO Admin</span>
@@ -535,9 +535,26 @@ tr:hover td{background:#fafbfd;}
           <div class="field"><label>Branch</label>
             <select id="ano-branch"><option value="">All Branches</option></select>
           </div>
-          <div class="field"><label>Month</label><select id="ano-month"></select></div>
-          <div class="field"><label>Year</label><select id="ano-year"></select></div>
+          <div class="field"><label>Date</label><input type="date" id="ano-date"></div>
+          <div class="field"><label>Flag Type</label>
+            <select id="ano-flag">
+              <option value="">All Types</option>
+              <option value="CLONE_DEVICE">Clone Device</option>
+              <option value="UNKNOWN_DEVICE">Unknown Device</option>
+              <option value="IMPOSSIBLE_VELOCITY">Impossible Velocity</option>
+              <option value="SPEED_BOMB">Speed Bomb</option>
+            </select>
+          </div>
+          <div class="field"><label>Severity</label>
+            <select id="ano-sev">
+              <option value="">All</option>
+              <option value="HIGH">High</option>
+              <option value="MEDIUM">Medium</option>
+              <option value="LOW">Low</option>
+            </select>
+          </div>
           <button class="btn btn-primary btn-sm" id="btn-load-ano">Load</button>
+          <button class="btn btn-grey btn-sm" id="btn-clear-ano">&#10005; Clear</button>
         </div>
         <div id="ano-result"></div>
       </div>
