@@ -105,7 +105,7 @@ async function loadAdminData() {
   populateBranchSelects("emp-filter-branch","ae-branch","tgt-branch-filter","tgt-sum-branch","rdaily-branch","rmon-branch","ryear-branch","rlb-branch","rdis-branch","audit-branch","adl-branch","ano-branch");
 
   // Populate month/year selects
-  [["rmon-month","rmon-year"],["rlb-month","rlb-year"],["rdis-month","rdis-year"],["rsum-month","rsum-year"],["ano-month","ano-year"]].forEach(([m,y])=>{
+  [["rmon-month","rmon-year"],["rlb-month","rlb-year"],["rdis-month","rdis-year"],["rsum-month","rsum-year"]].forEach(([m,y])=>{
     populateMonthYear(document.getElementById(m),document.getElementById(y));
   });
 
@@ -1673,56 +1673,179 @@ document.getElementById("btn-download-search").addEventListener("click", () => {
 });
 
 // ── ANOMALY REPORT ───────────────────────────────────────────
-document.getElementById("btn-load-ano").addEventListener("click", async () => {
-  const branchName = document.getElementById("ano-branch").value || null;
-  const month = document.getElementById("ano-month").value;
-  const year  = document.getElementById("ano-year").value;
-  const btn = document.getElementById("btn-load-ano");
-  btn.disabled=true; btn.textContent="Loading…";
-  const res = await api("getAnomalyReport", { adminPassword: A.pwd, branchName, month: Number(month), year: Number(year) });
-  btn.disabled=false; btn.textContent="Load";
+const ANOMALY_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ4B-fZj2PvXgHEgz9QyBsm-dX3ZF6Fd7NeqKHLvKVmZ6basBZOByPzLLA2Qpf2kJgyWVmYEYGyHF2y/pub?gid=842434913&single=true&output=csv";
+let _anoCache = null;
 
+function parseAnoCSV(text) {
+  const lines = text.trim().split("\n");
+  const headers = lines[0].split(",").map(h => h.replace(/"/g,"").trim());
+  return lines.slice(1).filter(l => l.trim()).map(line => {
+    const vals = []; let cur = "", inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') { inQ = !inQ; continue; }
+      if (c === ',' && !inQ) { vals.push(cur.trim()); cur = ""; continue; }
+      cur += c;
+    }
+    vals.push(cur.trim());
+    const obj = {};
+    headers.forEach((h, i) => { obj[h] = (vals[i]||"").replace(/^"|"$/g,"").trim(); });
+    return obj;
+  });
+}
+
+async function fetchAnoData() {
+  if (_anoCache) return _anoCache;
+  const res = await fetch(ANOMALY_CSV_URL);
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  _anoCache = parseAnoCSV(await res.text());
+  return _anoCache;
+}
+
+function renderAnomalyReport(rows) {
   const el = document.getElementById("ano-result");
-  if(!res.ok){ el.innerHTML=`<div class="alert alert-error"><span>✕</span> ${res.error||"Error"}</div>`; return; }
-  if(!res.total){ el.innerHTML=empty("No anomalies found for this period."); return; }
+  const sev = { HIGH:"red", MEDIUM:"amber", LOW:"grey" };
 
-  // Summary tiles per branch
-  const sev = {HIGH:"red",MEDIUM:"amber",LOW:"grey"};
-  const summaryCards = (res.summary||[]).sort((a,b)=>b.total-a.total).map(b=>`
+  const cloneRows = rows.filter(r => r.FlagType === "CLONE_DEVICE");
+  const otherRows = rows.filter(r => r.FlagType !== "CLONE_DEVICE");
+
+  if (!rows.length) { el.innerHTML = empty("No anomalies found for the selected filters."); return; }
+
+  // ── Summary tiles ──
+  const branchTotals = {};
+  rows.forEach(r => {
+    const b = r.BranchName || "Unknown";
+    if (!branchTotals[b]) branchTotals[b] = { total:0, HIGH:0, MEDIUM:0, LOW:0, types:{} };
+    branchTotals[b].total++;
+    if (r.Severity) branchTotals[b][r.Severity] = (branchTotals[b][r.Severity]||0) + 1;
+    if (r.FlagType) branchTotals[b].types[r.FlagType] = (branchTotals[b].types[r.FlagType]||0) + 1;
+  });
+  const suspectEmps = new Set(cloneRows.flatMap(r => (r.EmpIDs||"").split(",").map(e=>e.trim()).filter(Boolean))).size;
+  const sharedDevs  = new Set(cloneRows.map(r => (r.DeviceHashes||"").trim()).filter(Boolean)).size;
+
+  const tiles = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:18px">
+      <div class="tile"><div class="tile-label">Total Flags</div><div class="tile-value blue">${rows.length}</div></div>
+      <div class="tile"><div class="tile-label">High Severity</div><div class="tile-value red">${rows.filter(r=>r.Severity==="HIGH").length}</div></div>
+      <div class="tile"><div class="tile-label">Shared Devices</div><div class="tile-value red">${sharedDevs}</div></div>
+      <div class="tile"><div class="tile-label">Suspect Employees</div><div class="tile-value amber">${suspectEmps}</div></div>
+    </div>`;
+
+  // ── Branch summary cards ──
+  const branchCards = Object.entries(branchTotals).sort((a,b)=>b[1].total-a[1].total).map(([branch, d])=>`
     <div class="card" style="padding:14px;min-width:160px">
-      <div style="font-weight:700;font-size:13px;margin-bottom:6px;color:var(--t1)">${b.branch}</div>
-      <div style="font-size:12px;margin-bottom:4px">Total: <b>${b.total}</b> &nbsp; Open: <b style="color:var(--red)">${b.OPEN}</b></div>
-      <div style="font-size:11px;color:var(--t3)">
-        🔴 HIGH: ${b.HIGH} &nbsp; 🟡 MED: ${b.MEDIUM} &nbsp; ⚪ LOW: ${b.LOW}
-      </div>
-      <div style="font-size:11px;color:var(--t3);margin-top:4px">${
-        Object.entries(b.types||{}).map(([k,v])=>`${k}:${v}`).join(" · ")
-      }</div>
+      <div style="font-weight:700;font-size:13px;margin-bottom:6px;color:var(--t1)">${branch}</div>
+      <div style="font-size:12px;margin-bottom:4px">Total: <b>${d.total}</b></div>
+      <div style="font-size:11px;color:var(--t3)">🔴 HIGH: ${d.HIGH||0} &nbsp;🟡 MED: ${d.MEDIUM||0} &nbsp;⚪ LOW: ${d.LOW||0}</div>
+      <div style="font-size:11px;color:var(--t3);margin-top:4px">${Object.entries(d.types).map(([k,v])=>`${k.replace("_"," ")}:${v}`).join(" · ")}</div>
     </div>`).join("");
 
-  // Detail rows
-  const detailRows = (res.anomalies||[]).map(a=>`
-    <tr>
-      <td style="font-size:11px;color:var(--t3);white-space:nowrap">${String(a.Timestamp||"").substring(0,16)}</td>
-      <td style="font-weight:600;white-space:nowrap">${a.BranchName||""}</td>
-      <td><code style="font-size:11px;background:var(--bg);padding:1px 5px;border-radius:3px">${a.FlagType||""}</code></td>
-      <td><span class="badge badge-${sev[a.Severity]||"grey"}">${a.Severity||""}</span></td>
-      <td style="font-size:11px;max-width:220px">${a.Details||""}</td>
-      <td style="font-size:11px;color:var(--t3)">${a.EmpIDs||""}</td>
-      <td><span class="badge badge-${a.Status==="OPEN"?"red":"green"}">${a.Status||""}</span></td>
-    </tr>`).join("");
+  // ── Device sharing groups ──
+  let deviceSection = "";
+  if (cloneRows.length) {
+    const deviceMap = {};
+    cloneRows.forEach(r => {
+      const hash = (r.DeviceHashes||"unknown").trim();
+      const branch = r.BranchName || "";
+      const key = hash + "|" + branch;
+      if (!deviceMap[key]) deviceMap[key] = { hash, branch, empIds:new Set(), ts: r.Timestamp, details: r.Details };
+      (r.EmpIDs||"").split(",").map(e=>e.trim()).filter(Boolean).forEach(e => deviceMap[key].empIds.add(e));
+    });
 
-  el.innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin-bottom:18px">
-      ${summaryCards}
-    </div>
-    <div class="table-wrap" style="overflow-x:auto">
-      <table style="font-size:13px">
-        <thead><tr>
-          <th>Time</th><th>Branch</th><th>Flag Type</th><th>Severity</th>
-          <th>Details</th><th>Emp IDs</th><th>Status</th>
-        </tr></thead>
-        <tbody>${detailRows}</tbody>
-      </table>
-    </div>`;
+    const deviceBlocks = Object.values(deviceMap).sort((a,b)=>b.empIds.size-a.empIds.size).map(g => {
+      const empRows = [...g.empIds].map((eid, i) => `
+        <tr>
+          <td style="font-weight:700;color:var(--red);width:32px">${i+1}</td>
+          <td style="white-space:nowrap;width:1%"><code style="font-size:12px;background:var(--bg);padding:2px 8px;border-radius:4px;font-weight:600;white-space:nowrap;display:inline-block">${eid}</code></td>
+          <td style="font-weight:600">${g.branch}</td>
+          <td><code style="font-size:10px;background:var(--bg);padding:2px 6px;border-radius:4px;color:var(--t3);word-break:break-all">${g.hash}</code></td>
+          <td style="width:90px"><span class="badge badge-red">🚩 Sharing</span></td>
+        </tr>`).join("");
+      return `
+        <div class="card" style="border:1.5px solid #fca5a5;padding:0;overflow:hidden;margin-bottom:12px">
+          <div style="background:linear-gradient(90deg,var(--red),#e74c3c);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
+            <div style="font-weight:700;font-size:13px;color:#fff">⚠️ ${g.empIds.size} employees sharing one device — ${g.branch}</div>
+            <div style="font-size:11px;color:rgba(255,255,255,.75);font-family:'DM Mono',monospace">${(g.ts||"").substring(0,16)}</div>
+          </div>
+          <div class="table-wrap" style="border-radius:0;border:none">
+            <table style="font-size:13px;table-layout:auto">
+              <thead><tr><th style="width:32px">#</th><th style="white-space:nowrap">Employee ID</th><th>Branch</th><th>Device Hash</th><th style="width:90px">Status</th></tr></thead>
+              <tbody>${empRows}</tbody>
+            </table>
+          </div>
+          ${g.details ? `<div style="font-size:11px;color:var(--t3);padding:8px 16px;background:var(--red-lt);font-style:italic">ℹ️ ${g.details}</div>` : ""}
+        </div>`;
+    }).join("");
+
+    deviceSection = `
+      <div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 10px;padding-bottom:6px;border-bottom:1.5px solid var(--border)">
+        📱 Device Sharing — Employees using the same device
+      </div>
+      ${deviceBlocks}`;
+  }
+
+  // ── Other anomalies table ──
+  let otherSection = "";
+  if (otherRows.length) {
+    const flagLabel = { UNKNOWN_DEVICE:"Unknown device", IMPOSSIBLE_VELOCITY:"Impossible velocity", SPEED_BOMB:"Speed bomb" };
+    const detailRows = otherRows.map(r => `
+      <tr>
+        <td style="font-size:11px;color:var(--t3);white-space:nowrap;font-family:'DM Mono',monospace">${(r.Timestamp||"").substring(0,16)}</td>
+        <td style="font-weight:600;white-space:nowrap">${r.BranchName||""}</td>
+        <td style="white-space:nowrap;width:1%">${(r.EmpIDs||"").split(",").map(e=>`<code style="background:var(--bg);padding:1px 8px;border-radius:4px;font-size:11px;font-weight:600;white-space:nowrap;display:inline-block;margin:1px 2px">${e.trim()}</code>`).join(" ")}</td>
+        <td><code style="font-size:11px;background:var(--bg);padding:1px 6px;border-radius:4px">${flagLabel[r.FlagType]||r.FlagType||""}</code></td>
+        <td><span class="badge badge-${sev[r.Severity]||"grey"}">${r.Severity||""}</span></td>
+        <td style="font-size:11px;color:var(--t3);max-width:240px">${r.Details||"—"}</td>
+      </tr>`).join("");
+
+    otherSection = `
+      <div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 10px;padding-bottom:6px;border-bottom:1.5px solid var(--border)">
+        ⚡ Other Anomalies
+      </div>
+      <div class="table-wrap">
+        <table style="font-size:13px">
+          <thead><tr><th>Timestamp</th><th>Branch</th><th>Employee ID(s)</th><th>Flag Type</th><th>Severity</th><th>Details</th></tr></thead>
+          <tbody>${detailRows}</tbody>
+        </table>
+      </div>`;
+  }
+
+  el.innerHTML = tiles
+    + `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin-bottom:18px">${branchCards}</div>`
+    + deviceSection
+    + otherSection;
+}
+
+document.getElementById("btn-load-ano").addEventListener("click", async () => {
+  const branch = document.getElementById("ano-branch").value;
+  const dateFilter = document.getElementById("ano-date").value;
+  const flagFilter = document.getElementById("ano-flag").value;
+  const sevFilter  = document.getElementById("ano-sev").value;
+  const btn = document.getElementById("btn-load-ano");
+  const el  = document.getElementById("ano-result");
+
+  btn.disabled = true; btn.textContent = "Loading…";
+  el.innerHTML = `<div class="loading-wrap"><div class="spinner spinner-dark"></div> Fetching anomaly data…</div>`;
+
+  try {
+    const all = await fetchAnoData();
+    const filtered = all.filter(r => {
+      if (branch     && r.BranchName !== branch) return false;
+      if (dateFilter && (r.Timestamp||"").substring(0,10) !== dateFilter) return false;
+      if (flagFilter && r.FlagType !== flagFilter) return false;
+      if (sevFilter  && r.Severity !== sevFilter) return false;
+      return true;
+    });
+    renderAnomalyReport(filtered);
+  } catch(e) {
+    el.innerHTML = `<div class="alert alert-error"><span>✕</span> Failed to load: ${e.message}</div>`;
+  } finally {
+    btn.disabled = false; btn.textContent = "Load";
+  }
+});
+
+document.getElementById("btn-clear-ano").addEventListener("click", () => {
+  ["ano-branch","ano-flag","ano-sev"].forEach(id => { const el = document.getElementById(id); if(el) el.value=""; });
+  const d = document.getElementById("ano-date"); if(d) d.value="";
+  document.getElementById("ano-result").innerHTML = "";
 });
